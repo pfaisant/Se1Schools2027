@@ -96,21 +96,33 @@
     .alt-panel.open{display:block}
     .alt-toggle{font-size:.75rem}
 
-    .plan{display:grid;gap:.45rem;max-width:960px}
+    .plan{display:grid;gap:.45rem;max-width:1100px}
     .plan-empty{font-size:.8rem;color:var(--mute);padding:.75rem;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+    .filters{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center}
+    .filter-btn[aria-pressed="true"]{background:var(--teal);color:#fff;border-color:var(--teal)}
     .tl{display:grid;grid-template-columns:auto 7rem 1fr;gap:.55rem;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.6rem .75rem}
     .tl.crit{border-color:#f0b4c4;background:#fff8f9}
     .tl.ind{border-color:#d4c4f5;background:#fbf8ff}
+    .tl.unbooked{border-color:#f0b4c4}
     .tl input[type=checkbox]{width:1.05rem;height:1.05rem;margin-top:.15rem;accent-color:var(--teal);cursor:pointer}
     .tl .when{font-family:"JetBrains Mono",monospace;font-size:.68rem;font-weight:600;color:var(--teal);padding-top:.12rem}
     .tl.crit .when{color:var(--rose)} .tl.ind .when{color:var(--violet)}
     .tl .what{font-size:.8rem;color:var(--soft)}
     .tl .what strong{color:var(--ink)}
     .tl.done{opacity:.55}
-    .tl.done .what{text-decoration:line-through}
+    .tl.done .what strong{text-decoration:line-through}
     .tl .hint{display:block;font-size:.7rem;color:var(--mute);margin-top:.2rem;line-height:1.4}
     .tl .links{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem}
     .tl .school-tag{font-size:.62rem;font-weight:700;color:var(--teal);background:var(--teal-bg);padding:.1rem .35rem;border-radius:4px;display:inline-block;margin-top:.25rem}
+    .meta-row{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin-top:.4rem}
+    .who{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+    .who-btn{border:0;background:transparent;font:inherit;font-size:.62rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:.28rem .5rem;cursor:pointer;color:var(--mute)}
+    .who-btn[aria-pressed="true"][data-owner="paul"]{background:var(--navy);color:#fff}
+    .who-btn[aria-pressed="true"][data-owner="anja"]{background:var(--teal);color:#fff}
+    .who-btn[aria-pressed="true"][data-owner="both"]{background:#334155;color:#fff}
+    .book-btn{font-size:.62rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:.28rem .55rem;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--navy)}
+    .book-btn[aria-pressed="true"]{background:var(--green-bg);color:var(--green);border-color:#86efac}
+    .book-btn[aria-pressed="false"]{background:var(--amber-bg);color:var(--amber);border-color:#fcd34d}
 
     .comment-form{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:.85rem;margin-bottom:.85rem;max-width:720px}
     .comment-form label{display:block;font-size:.72rem;font-weight:700;color:var(--mute);margin-bottom:.25rem}
@@ -210,6 +222,13 @@
 
     <section id="plan" class="panel">
       <div class="toolbar">
+        <div class="filters" role="group" aria-label="Plan filters">
+          <button type="button" class="btn filter-btn" data-plan-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="btn filter-btn" data-plan-filter="paul" aria-pressed="false">Paul</button>
+          <button type="button" class="btn filter-btn" data-plan-filter="anja" aria-pressed="false">Anja</button>
+          <button type="button" class="btn filter-btn" data-plan-filter="visits" aria-pressed="false">School visits</button>
+          <button type="button" class="btn filter-btn" data-plan-filter="unbooked" aria-pressed="false">Unbooked visits</button>
+        </div>
         <button type="button" class="btn" id="btn-check-clear">Clear ticks</button>
         <span class="meta" id="plan-filter-hint" style="font-size:.72rem;color:var(--mute)"></span>
       </div>
@@ -236,6 +255,9 @@
 
   var shortlist = DEFAULT_SHORTLIST.slice();
   var checklist = {};
+  var owners = {};
+  var booked = {};
+  var planFilter = "all";
   var comments = [];
   var remoteUpdatedAt = null;
   var saveTimer = null;
@@ -489,82 +511,82 @@
 
   /* Plan tasks: schools[] empty = always if any shortlist remains; else only if any listed school is shortlisted */
   var PLAN = [
-    {id:"p_eadm", when:"Sep 2026", cls:"", schools:[], label:"Open eAdmissions account (home LA)",
+    {id:"p_eadm", when:"Sep 2026", cls:"", owner:"paul", schools:[], label:"Open eAdmissions account (home LA)",
       hint:"All state CAF applications go through eAdmissions. Create/login once; use for every state school still on the shortlist.",
       links:[{l:"eAdmissions",h:"https://www.eadmissions.org.uk"},{l:"Southwark secondary guide",h:"https://www.southwark.gov.uk/schools-and-education/school-admissions/secondary-admissions/applying-secondary-school-place"}]},
-    {id:"c1", when:"By 11 Sep midday", cls:"crit", schools:["chestnut"], label:"Chestnut Grove — Art/MFL specialist signup",
+    {id:"c1", when:"By 11 Sep midday", cls:"crit", owner:"paul", schools:["chestnut"], label:"Chestnut Grove — Art/MFL specialist signup",
       hint:"Submit Microsoft Form before midday. Tests Sat 19 Sep 09:00–13:00. FR+DE helps MFL aptitude comfort. Top 30 MFL + 1st pref can guarantee place.",
       links:[{l:"Specialist form",h:"https://forms.office.com/Pages/ResponsePage.aspx?id=2lpYW59c_ECe6BE-MtwiStZckjfs9pxIpLFkLm7_n9NUMEpHTFMwWDBWSjRaTldMTklUQlozVEIxWC4u"},{l:"Specialism info",h:"https://www.chestnutgrove.org.uk/index.php?page=specialism-applications"}]},
-    {id:"c2", when:"19 Sep 2026", cls:"crit", schools:["chestnut"], label:"Chestnut Grove specialist tests",
+    {id:"c2", when:"19 Sep 2026", cls:"crit", owner:"both", schools:["chestnut"], label:"Chestnut Grove specialist tests",
       hint:"Attend test day. Materials provided for Art. MFL = aptitude (not prior study required).",
       links:[{l:"Specialism page",h:"https://www.chestnutgrove.org.uk/index.php?page=specialism-applications"}]},
-    {id:"od_cls", when:"22 & 24 Sep 2026", cls:"ind", schools:["cls"], label:"City of London School open days",
+    {id:"od_cls", when:"22 & 24 Sep 2026", cls:"ind", kind:"visit", owner:"anja", schools:["cls"], label:"City of London School open days",
       hint:"Book/attend. Registration for 11+ is separate (by 2 Nov).",
       links:[{l:"Visit / open events",h:"https://www.cityoflondonschool.org.uk/admissions/visit-us/"},{l:"11+ overview",h:"https://www.cityoflondonschool.org.uk/admissions/11-entry/"}]},
-    {id:"od_harris", when:"17 Sep eve + Sep/Oct am", cls:"", schools:["harris"], label:"Harris Boys ED open events / tour",
+    {id:"od_harris", when:"17 Sep eve + Sep/Oct am", cls:"", kind:"visit", owner:"anja", schools:["harris"], label:"Harris Boys ED open events / tour",
       hint:"See school in action. Distance-based — first preference improves odds.",
       links:[{l:"Open events",h:"https://www.harrisdulwichboys.org.uk/admissions/open-events"},{l:"Book a tour",h:"https://www.harrisdulwichboys.org.uk/admissions/book-a-tour"}]},
-    {id:"od_cola", when:"24 Sep eve; 28–30 Sep am", cls:"", schools:["cola"], label:"COLA Southwark open days",
+    {id:"od_cola", when:"24 Sep eve; 28–30 Sep am", cls:"", kind:"visit", owner:"anja", schools:["cola"], label:"COLA Southwark open days",
       hint:"Book in advance if required. No banding test for entry.",
       links:[{l:"Open days",h:"https://www.cityacademy.co.uk/join-us/admissions/open-days/"},{l:"Apply info",h:"https://www.cityacademy.co.uk/join-us/admissions/apply/"}]},
-    {id:"od_habs", when:"1 Oct eve; tours Sep/Oct", cls:"", schools:["habs"], label:"Haberdashers' Borough open evening / tours",
+    {id:"od_habs", when:"1 Oct eve; tours Sep/Oct", cls:"", kind:"visit", owner:"anja", schools:["habs"], label:"Haberdashers' Borough open evening / tours",
       hint:"Tours 23 & 30 Sep, 7 & 14 Oct; evening 1 Oct.",
       links:[{l:"School site",h:"https://www.habshoroughacademy.org.uk/"}]},
-    {id:"od_wcs", when:"25 Sep; 2/9/16 Oct am; 6 Oct eve", cls:"", schools:["wcs"], label:"Westminster City School open events",
+    {id:"od_wcs", when:"25 Sep; 2/9/16 Oct am; 6 Oct eve", cls:"", kind:"visit", owner:"anja", schools:["wcs"], label:"Westminster City School open events",
       hint:"Also prepare SIF + banding (14 Nov).",
       links:[{l:"Open events",h:"https://www.wcsch.com/535/open-events"},{l:"Y7 entry",h:"https://www.wcsch.com/533/year-7-entry"}]},
-    {id:"od_dc", when:"10 Oct 2026 am", cls:"ind", schools:["dulwich"], label:"Dulwich College open morning (+ book mid-week tour)",
+    {id:"od_dc", when:"10 Oct 2026 am", cls:"ind", kind:"visit", owner:"anja", schools:["dulwich"], label:"Dulwich College open morning (+ book mid-week tour)",
       hint:"Register for 11+ by 2 Nov midday (£200).",
       links:[{l:"Y7 entry",h:"https://www.dulwich.org.uk/admissions/year-7-entry"}]},
-    {id:"od_oasis", when:"Sep–Oct TBC", cls:"", schools:["oasis"], label:"Oasis South Bank open events + start SIF",
+    {id:"od_oasis", when:"Sep–Oct TBC", cls:"", kind:"visit", owner:"anja", schools:["oasis"], label:"Oasis South Bank open events + start SIF",
       hint:"CAF alone is not enough — complete school SIF and return to academy.",
       links:[{l:"Admissions / SIF",h:"https://www.oasisacademysouthbank.org/admissions/how-to-apply/our-admissions-arrangements"}]},
-    {id:"od_globe", when:"Sep–Oct TBC", cls:"", schools:["globe"], label:"Ark Globe open events",
+    {id:"od_globe", when:"Sep–Oct TBC", cls:"", kind:"visit", owner:"anja", schools:["globe"], label:"Ark Globe open events",
       hint:"Confirm any banding/test on current admissions policy.",
       links:[{l:"Ark Globe",h:"https://arkglobe.org/"}]},
-    {id:"c4", when:"When published", cls:"", schools:["cola"], label:"COLA IT aptitude form (2026)",
+    {id:"c4", when:"When published", cls:"", owner:"paul", schools:["cola"], label:"COLA IT aptitude form (2026)",
       hint:"Optional for ~24 IT places. Linked form is still 2025 — use only if school confirms; else wait for 2026 release.",
       links:[{l:"IT form 2025 (interim)",h:"https://docs.google.com/forms/d/e/1FAIpQLSdkmmPcoGAgp96NkwOeHwPzXqVSKGLEiArMbY81rJFYvLG40Q/viewform"},{l:"Apply page",h:"https://www.cityacademy.co.uk/join-us/admissions/apply/"}]},
-    {id:"c5", when:"Summer portal", cls:"", schools:["chestnut"], label:"Register Wandsworth Year 6 Test",
+    {id:"c5", when:"Summer portal", cls:"", owner:"paul", schools:["chestnut"], label:"Register Wandsworth Year 6 Test",
       hint:"Required for all Chestnut applicants (general places). Council emails venue.",
       links:[{l:"Wandsworth Test",h:"https://www.wandsworth.gov.uk/about-the-year-6-test/"},{l:"Y7 admissions",h:"https://www.chestnutgrove.org.uk/index.php?page=year-7-admissions"}]},
-    {id:"c6", when:"Before 7 Oct", cls:"", schools:["lycee","lycee_brit"], label:"Assemble Lycée dossier; decide French/SI vs British",
+    {id:"c6", when:"Before 7 Oct", cls:"", owner:"both", schools:["lycee","lycee_brit"], label:"Assemble Lycée dossier; decide French/SI vs British",
       hint:"British Section is separate and ~£21.5k/yr vs French ~£12.6k. Have reports ready before portal opens.",
       links:[{l:"French curriculum",h:"https://www.lyceefrancais.org.uk/sinscrire/cursus-francais/"},{l:"British curriculum",h:"https://www.lyceefrancais.org.uk/sinscrire/cursus-britannique/"},{l:"Fees PDF",h:"https://www.lyceefrancais.org.uk/assets/Uploads/Tarifs-2026-2027.pdf"}]},
-    {id:"c7", when:"From 7 Oct 2026", cls:"", schools:["lycee"], label:"Open Lycée 6ème registration (French / SI–BFI)",
+    {id:"c7", when:"From 7 Oct 2026", cls:"", owner:"paul", schools:["lycee"], label:"Open Lycée 6ème registration (French / SI–BFI)",
       hint:"Submit when dossier complete. No entrance exam.",
       links:[{l:"Admissions",h:"https://www.lyceefrancais.org.uk/en/admissions/"},{l:"Cursus français",h:"https://www.lyceefrancais.org.uk/sinscrire/cursus-francais/"}]},
-    {id:"c7b", when:"Per British calendar", cls:"", schools:["lycee_brit"], label:"British Section interest / registration",
+    {id:"c7b", when:"Per British calendar", cls:"", owner:"paul", schools:["lycee_brit"], label:"British Section interest / registration",
       hint:"Follow British track pages — not the same as French 6ème form.",
       links:[{l:"Register interest",h:"https://www.lyceefrancais.org.uk/sinscrire/cursus-britannique/exprimez-votre-interet-pour-notre-section-britannique/"},{l:"British Section",h:"https://www.lyceefrancais.org.uk/apprendre/section-britannique/"}]},
-    {id:"c8", when:"31 Oct 2026", cls:"crit", schools:[], label:"Submit CAF — rank only schools still on shortlist",
+    {id:"c8", when:"31 Oct 2026", cls:"crit", owner:"paul", schools:[], label:"Submit CAF — rank only schools still on shortlist",
       hint:"True preference order. Include every remaining state school you still want. Late CAF risks fewer options.",
       links:[{l:"eAdmissions",h:"https://www.eadmissions.org.uk"}]},
-    {id:"c9", when:"By 31 Oct", cls:"crit", schools:["wcs"], label:"Westminster City SIF + banding booking",
+    {id:"c9", when:"By 31 Oct", cls:"crit", owner:"paul", schools:["wcs"], label:"Westminster City SIF + banding booking",
       hint:"SIF books banding seat (14 Nov 09:30). Faith docs if applying under Christian/faith categories.",
       links:[{l:"Apply / SIF",h:"https://www.wcsch.com/744/apply-year-7"},{l:"Y7 entry",h:"https://www.wcsch.com/533/year-7-entry"}]},
-    {id:"c9b", when:"By 31 Oct", cls:"", schools:["oasis"], label:"Oasis South Bank SIF returned to academy",
+    {id:"c9b", when:"By 31 Oct", cls:"", owner:"paul", schools:["oasis"], label:"Oasis South Bank SIF returned to academy",
       hint:"Confirm SIF received — CAF alone may not complete application.",
       links:[{l:"Admissions / SIF",h:"https://www.oasisacademysouthbank.org/admissions/how-to-apply/our-admissions-arrangements"}]},
-    {id:"c10", when:"2 Nov midday", cls:"ind", schools:["dulwich"], label:"Register Dulwich College 11+ (£200)",
+    {id:"c10", when:"2 Nov midday", cls:"ind", owner:"paul", schools:["dulwich"], label:"Register Dulwich College 11+ (£200)",
       hint:"Tick Music (piano ~Gr5) and/or Sport (football) scholarship interest on form.",
       links:[{l:"Y7 register",h:"https://www.dulwich.org.uk/admissions/year-7-entry"},{l:"Scholarships",h:"https://www.dulwich.org.uk/admissions/scholarships"}]},
-    {id:"c11", when:"2 Nov 2026", cls:"ind", schools:["cls"], label:"Register City of London School 11+",
+    {id:"c11", when:"2 Nov 2026", cls:"ind", owner:"paul", schools:["cls"], label:"Register City of London School 11+",
       hint:"Include creative writing in prep. Bursary interest if relevant.",
       links:[{l:"11+ registration",h:"https://www.cityoflondonschool.org.uk/11-entry-registration-form/"},{l:"Bursaries",h:"https://www.cityoflondonschool.org.uk/admissions/transformational-bursaries/"}]},
-    {id:"c_wus", when:"See portal", cls:"ind", schools:["westminster_ind"], label:"Westminster Under School 11+ registration",
+    {id:"c_wus", when:"See portal", cls:"ind", owner:"paul", schools:["westminster_ind"], label:"Westminster Under School 11+ registration",
       hint:"Independent path into Under School then automatic progression to Westminster School Y9.",
       links:[{l:"11+ overview",h:"https://www.westminster.org.uk/admissions/11-entry-westminster/"},{l:"Registration portal",h:"https://wusentry.westminster.org.uk/apply/logon/index.asp"},{l:"Fees",h:"https://www.westminster.org.uk/admissions/westminster-school-fees/"}]},
-    {id:"c12", when:"14 Nov 09:30", cls:"", schools:["wcs"], label:"Sit WCS banding test",
+    {id:"c12", when:"14 Nov 09:30", cls:"", owner:"both", schools:["wcs"], label:"Sit WCS banding test",
       hint:"At Westminster City School. Assessment day (Eng/Maths) date TBC by school.",
       links:[{l:"Y7 entry",h:"https://www.wcsch.com/533/year-7-entry"}]},
-    {id:"c13", when:"27 Nov 2026", cls:"ind", schools:["cls"], label:"CLS entrance assessments",
+    {id:"c13", when:"27 Nov 2026", cls:"ind", owner:"both", schools:["cls"], label:"CLS entrance assessments",
       hint:"Online 105′ + writing 30′. Interview if shortlisted.",
       links:[{l:"11+ overview",h:"https://www.cityoflondonschool.org.uk/admissions/11-entry/"}]},
-    {id:"c14", when:"4 Dec 2026", cls:"ind", schools:["dulwich"], label:"Dulwich College 11+ exams",
+    {id:"c14", when:"4 Dec 2026", cls:"ind", owner:"both", schools:["dulwich"], label:"Dulwich College 11+ exams",
       hint:"Maths, English, Reasoning. Music auditions ~9 Jan 2027 / Sport ~18–19 Jan if invited.",
       links:[{l:"Y7 entry",h:"https://www.dulwich.org.uk/admissions/year-7-entry"},{l:"Scholarships",h:"https://www.dulwich.org.uk/admissions/scholarships"}]},
-    {id:"c15", when:"~Mar 2027", cls:"", schools:[], label:"Offers — accept / deposits / post-offer scholarships",
+    {id:"c15", when:"~Mar 2027", cls:"", owner:"both", schools:[], label:"Offers — accept / deposits / post-offer scholarships",
       hint:"National Offer Day for state. Independents own timelines. Harris scholarships only after confirmed offer.",
       links:[{l:"Harris scholarships",h:"https://www.harrisdulwichboys.org.uk/harris-scholarship-programmes"}]}
   ];
@@ -791,18 +813,56 @@
     return item.schools.some(function (id) { return isOn(id); });
   }
 
+  function isVisit(item) { return item.kind === "visit"; }
+
+  function ownerOf(item) {
+    var o = owners[item.id] || item.owner || "both";
+    return (o === "paul" || o === "anja" || o === "both") ? o : "both";
+  }
+
+  function planMatchesFilter(item) {
+    if (planFilter === "paul") return ownerOf(item) === "paul" || ownerOf(item) === "both";
+    if (planFilter === "anja") return ownerOf(item) === "anja" || ownerOf(item) === "both";
+    if (planFilter === "visits") return isVisit(item);
+    if (planFilter === "unbooked") return isVisit(item) && !booked[item.id];
+    return true;
+  }
+
+  function ownerButtons(item) {
+    var cur = ownerOf(item);
+    return '<div class="who" role="group" aria-label="Owner">' +
+      ["paul", "anja", "both"].map(function (who) {
+        var label = who === "both" ? "Both" : who.charAt(0).toUpperCase() + who.slice(1);
+        return '<button type="button" class="who-btn" data-set-owner="' + item.id + '" data-owner="' + who +
+          '" aria-pressed="' + (cur === who ? "true" : "false") + '">' + label + "</button>";
+      }).join("") +
+      "</div>";
+  }
+
   function renderPlan() {
     var root = document.getElementById("plan-list");
-    var items = PLAN.filter(planVisible);
+    var base = PLAN.filter(planVisible);
+    var items = base.filter(planMatchesFilter);
+    var visitN = base.filter(isVisit).length;
+    var unbookedN = base.filter(function (item) { return isVisit(item) && !booked[item.id]; }).length;
+    document.querySelectorAll("[data-plan-filter]").forEach(function (btn) {
+      var key = btn.getAttribute("data-plan-filter");
+      btn.setAttribute("aria-pressed", key === planFilter ? "true" : "false");
+      if (key === "visits") btn.textContent = "School visits (" + visitN + ")";
+      if (key === "unbooked") btn.textContent = "Unbooked visits (" + unbookedN + ")";
+    });
     var names = shortlistSchools().map(function (s) { return s.name; });
+    var extra = planFilter === "all" ? "" : " · filter: " + planFilter;
     document.getElementById("plan-filter-hint").textContent =
-      shortlist.length ? ("Showing tasks for: " + names.join(", ")) : "Shortlist empty — add schools to see a plan.";
+      (shortlist.length ? ("Showing " + items.length + " of " + base.length + " tasks for: " + names.join(", ")) : "Shortlist empty — add schools to see a plan.") + extra;
     if (!items.length) {
-      root.innerHTML = '<div class="plan-empty">No plan items. Tick schools on the Shortlist (or empty shortlist).</div>';
+      root.innerHTML = '<div class="plan-empty">No plan items for this filter. Tick schools on the Shortlist, or pick All.</div>';
       return;
     }
     root.innerHTML = items.map(function (item) {
       var done = !!checklist[item.id];
+      var isBooked = !!booked[item.id];
+      var visit = isVisit(item);
       var schoolBits = (item.schools || []).filter(isOn).map(function (id) {
         var s = byId(id);
         return s ? '<span class="school-tag">' + s.name + "</span>" : "";
@@ -810,11 +870,17 @@
       var links = (item.links || []).map(function (x) {
         return '<a class="btn" href="' + x.h + '" target="_blank" rel="noopener">' + x.l + "</a>";
       }).join("");
-      return '<div class="tl ' + (item.cls || "") + (done ? " done" : "") + '">' +
-        '<input type="checkbox" data-check="' + item.id + '"' + (done ? " checked" : "") + ' />' +
+      var bookBtn = visit
+        ? '<button type="button" class="book-btn" data-book="' + item.id + '" aria-pressed="' + (isBooked ? "true" : "false") + '">' +
+          (isBooked ? "Booked" : "Not booked") + "</button>"
+        : "";
+      var cls = (item.cls || "") + (done ? " done" : "") + (visit && !isBooked && !done ? " unbooked" : "");
+      return '<div class="tl ' + cls + '">' +
+        '<input type="checkbox" data-check="' + item.id + '"' + (done ? " checked" : "") + ' title="Done" />' +
         '<div class="when">' + item.when + "</div>" +
         '<div class="what"><strong>' + item.label + "</strong>" +
         (schoolBits ? "<div>" + schoolBits + "</div>" : "") +
+        '<div class="meta-row">' + ownerButtons(item) + bookBtn + "</div>" +
         (item.hint ? '<span class="hint">' + item.hint + "</span>" : "") +
         (links ? '<div class="links">' + links + "</div>" : "") +
         "</div></div>";
@@ -823,6 +889,21 @@
       cb.addEventListener("change", function () {
         checklist[cb.getAttribute("data-check")] = cb.checked;
         cb.closest(".tl").classList.toggle("done", cb.checked);
+        scheduleSave();
+      });
+    });
+    root.querySelectorAll("[data-set-owner]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        owners[btn.getAttribute("data-set-owner")] = btn.getAttribute("data-owner");
+        renderPlan();
+        scheduleSave();
+      });
+    });
+    root.querySelectorAll("[data-book]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-book");
+        booked[id] = !booked[id];
+        renderPlan();
         scheduleSave();
       });
     });
@@ -919,10 +1000,12 @@
 
   function currentState() {
     return {
-      v: 3,
+      v: 4,
       shortlist: shortlist.slice(),
       preferences: shortlist.slice(), // backward compat
       checklist: Object.assign({}, checklist),
+      owners: Object.assign({}, owners),
+      booked: Object.assign({}, booked),
       comments: normalizeComments(comments), // always array in storage
       updatedAt: new Date().toISOString(),
       updatedBy: CLIENT_ID
@@ -936,6 +1019,12 @@
     if (Array.isArray(prefs)) shortlist = normalizeShortlist(prefs);
     if (state.checklist && typeof state.checklist === "object" && !Array.isArray(state.checklist)) {
       checklist = Object.assign({}, state.checklist);
+    }
+    if (state.owners && typeof state.owners === "object" && !Array.isArray(state.owners)) {
+      owners = Object.assign({}, state.owners);
+    }
+    if (state.booked && typeof state.booked === "object" && !Array.isArray(state.booked)) {
+      booked = Object.assign({}, state.booked);
     }
     // Merge remote comments into local so we never lose either side
     comments = mergeComments(comments, state.comments);
@@ -1062,8 +1151,14 @@
     altsOpen = !altsOpen;
     renderDash();
   });
+  document.querySelectorAll("[data-plan-filter]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      planFilter = btn.getAttribute("data-plan-filter");
+      renderPlan();
+    });
+  });
   document.getElementById("btn-check-clear").addEventListener("click", function () {
-    if (confirm("Clear all plan ticks?")) {
+    if (confirm("Clear all plan ticks? (Keeps owners and booked visits.)")) {
       checklist = {};
       renderPlan();
       scheduleSave();

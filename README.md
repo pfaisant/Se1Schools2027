@@ -21,7 +21,7 @@ So: **for free GitHub Pages sharing, the repo must stay public.** If you want a 
 ## Features
 
 - Preference ranking (▲▼) shared live with anyone who has the public link
-- Shared checklist / plan ticks
+- Shared checklist / plan ticks, Paul/Anja owners, school-visit filter and booked status
 - Sortable tables, column tooltips, fees colour scale
 - Comments feed for feedback
 - Autosave (no save button)
